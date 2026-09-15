@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#080b14">
+<title>TETRIS // Neon Stack</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<main class="app">
+
+<header class="topbar">
+
+    <div class="brand">
+
+        <div class="brand-logo">
+            T
+        </div>
+
+        <div>
+            <h1>TETRIS</h1>
+            <span>NEON STACK</span>
+        </div>
+
+    </div>
+
+    <div class="header-actions">
+
+        <button
+            id="pauseButton"
+            class="icon-button"
+            title="Pausa">
+            Ⅱ
+        </button>
+
+        <button
+            id="restartButton"
+            class="icon-button"
+            title="Reiniciar">
+            ↻
+        </button>
+
+        <button
+            id="settingsButton"
+            class="icon-button"
+            title="Configuración">
+            ⚙
+        </button>
+
+    </div>
+
+</header>
+
+<section class="game-layout">
+
+<aside class="panel left-panel">
+
+    <div class="card">
+
+        <div class="card-title">
+            RESERVA
+            <kbd id="holdKeyLabel">C</kbd>
+        </div>
+
+        <canvas
+            id="holdCanvas"
+            width="160"
+            height="120">
+        </canvas>
+
+    </div>
+
+    <div class="card controls">
+
+        <div class="card-title">
+            CONTROLES
+        </div>
+
+        <div class="control">
+            <span id="moveKeysLabel">A / D</span>
+            <small>Mover</small>
+        </div>
+
+        <div class="control">
+            <span id="rotateKeyLabel">W</span>
+            <small>Girar</small>
+        </div>
+
+        <div class="control">
+            <span id="downKeyLabel">S</span>
+            <small>Bajar</small>
+        </div>
+
+        <div class="control">
+            <span id="dropKeyLabel">ESPACIO</span>
+            <small>Caída</small>
+        </div>
+
+        <div class="control">
+            <span id="pauseKeyLabel">P</span>
+            <small>Pausa</small>
+        </div>
+
+    </div>
+
+</aside>
+
+<section class="board-area">
+
+    <div class="board-frame" id="boardFrame">
+
+        <canvas
+            id="gameCanvas"
+            width="300"
+            height="600">
+        </canvas>
+
+        <div id="effectsLayer"></div>
+
+        <div
+            id="overlay"
+            class="overlay hidden">
+
+            <div class="overlay-content">
+
+                <span
+                    id="overlayEyebrow"
+                    class="overlay-eyebrow">
+                    JUEGO PAUSADO
+                </span>
+
+                <strong
+                    id="overlayTitle"
+                    class="overlay-title">
+                    PAUSA
+                </strong>
+
+                <button
+                    id="overlayButton"
+                    class="primary-button">
+                    CONTINUAR
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="mobile-controls">
+
+        <button
+            class="mobile-key wide"
+            data-action="hold">
+            HOLD
+        </button>
+
+        <button
+            class="mobile-key"
+            data-action="left">
+            ←
+        </button>
+
+        <button
+            class="mobile-key accent"
+            data-action="rotate">
+            ↻
+        </button>
+
+        <button
+            class="mobile-key"
+            data-action="right">
+            →
+        </button>
+
+        <button
+            class="mobile-key"
+            data-action="down">
+            ↓
+        </button>
+
+        <button
+            class="mobile-key wide accent"
+            data-action="drop">
+            DROP
+        </button>
+
+    </div>
+
+</section>
+
+<aside class="panel right-panel">
+
+    <div class="card">
+
+        <div class="card-title">
+            SIGUIENTES
+        </div>
+
+        <div class="next-list">
+
+            <canvas class="next-canvas" width="150" height="82"></canvas>
+            <canvas class="next-canvas" width="150" height="82"></canvas>
+            <canvas class="next-canvas" width="150" height="82"></canvas>
+            <canvas class="next-canvas" width="150" height="82"></canvas>
+            <canvas class="next-canvas" width="150" height="82"></canvas>
+
+        </div>
+
+    </div>
+
+    <div class="stats">
+
+        <div class="card stat">
+            <span>PUNTOS</span>
+            <strong id="score">0</strong>
+        </div>
+
+        <div class="card stat">
+            <span>LÍNEAS</span>
+            <strong id="lines">0</strong>
+        </div>
+
+        <div class="card stat">
+            <span>NIVEL</span>
+            <strong id="level">1</strong>
+        </div>
+
+        <div class="card stat">
+            <span>RÉCORD</span>
+            <strong id="highScore">0</strong>
+        </div>
+
+    </div>
+
+    <div class="card status-card">
+
+        <div class="status-line">
+            <span>VELOCIDAD</span>
+            <strong id="speedLabel">NORMAL</strong>
+        </div>
+
+        <div class="status-line">
+            <span>ESTADO</span>
+            <strong id="statusLabel">JUGANDO</strong>
+        </div>
+
+    </div>
+
+</aside>
+
+</section>
+
+<footer>
+    7-BAG • GHOST PIECE • HOLD • A/D • RESPONSIVE • PERSONALIZABLE
+</footer>
+
+</main>
+
+
+<!-- =====================================================
+     SETTINGS
+===================================================== -->
+
+<div
+    id="settingsModal"
+    class="modal hidden">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <div>
+
+                <span>
+                    CONFIGURACIÓN
+                </span>
+
+                <h2>
+                    Personaliza tu partida
+                </h2>
+
+            </div>
+
+            <button
+                id="closeSettings"
+                class="close-button">
+                ×
+            </button>
+
+        </div>
+
+        <div class="setting">
+
+            <label for="difficulty">
+                Dificultad
+
+                <strong id="difficultyValue">
+                    Normal
+                </strong>
+            </label>
+
+            <input
+                id="difficulty"
+                type="range"
+                min="1"
+                max="5"
+                value="3">
+
+            <div class="range-labels">
+                <span>Fácil</span>
+                <span>Extrema</span>
+            </div>
+
+        </div>
+
+        <div class="setting">
+
+            <label>
+                Color principal
+            </label>
+
+            <div class="color-line">
+
+                <input
+                    id="themeColor"
+                    type="color"
+                    value="#7c5cff">
+
+                <span
+                    id="colorHex"
+                    class="color-value">
+                    #7C5CFF
+                </span>
+
+            </div>
+
+        </div>
+
+        <div class="setting">
+
+            <label>
+                Temas rápidos
+            </label>
+
+            <div class="swatches">
+
+                <button class="swatch" data-color="#7c5cff" style="--swatch:#7c5cff"></button>
+                <button class="swatch" data-color="#00d4ff" style="--swatch:#00d4ff"></button>
+                <button class="swatch" data-color="#ff3cac" style="--swatch:#ff3cac"></button>
+                <button class="swatch" data-color="#20e3b2" style="--swatch:#20e3b2"></button>
+                <button class="swatch" data-color="#ffb000" style="--swatch:#ffb000"></button>
+
+            </div>
+
+        </div>
+
+        <div class="setting">
+
+            <label>
+                Controles
+            </label>
+
+            <div class="keybinds">
+
+                <div class="keybind-row">
+                    <span>Izquierda</span>
+                    <button class="keybind-button" data-bind="left">A</button>
+                </div>
+
+                <div class="keybind-row">
+                    <span>Derecha</span>
+                    <button class="keybind-button" data-bind="right">D</button>
+                </div>
+
+                <div class="keybind-row">
+                    <span>Bajar</span>
+                    <button class="keybind-button" data-bind="down">S</button>
+                </div>
+
+                <div class="keybind-row">
+                    <span>Girar</span>
+                    <button class="keybind-button" data-bind="rotate">W</button>
+                </div>
+
+                <div class="keybind-row">
+                    <span>Caída instantánea</span>
+                    <button class="keybind-button" data-bind="drop">ESPACIO</button>
+                </div>
+
+                <div class="keybind-row">
+                    <span>Reserva</span>
+                    <button class="keybind-button" data-bind="hold">C</button>
+                </div>
+
+                <div class="keybind-row">
+                    <span>Pausa</span>
+                    <button class="keybind-button" data-bind="pause">P</button>
+                </div>
+
+            </div>
+
+            <div class="binding-note">
+                Haz clic en una acción y después presiona la tecla que quieras asignarle.
+                Las flechas del teclado siguen funcionando como controles alternativos para movimiento y giro.
+            </div>
+
+            <div class="control-preset">
+
+                <button id="presetAD">
+                    A / D
+                </button>
+
+                <button id="presetArrows">
+                    FLECHAS
+                </button>
+
+                <button id="resetControls">
+                    RESTAURAR
+                </button>
+
+            </div>
+
+        </div>
+
+        <div class="setting options">
+
+            <label>
+                <input
+                    id="ghostToggle"
+                    type="checkbox"
+                    checked>
+                Pieza fantasma
+            </label>
+
+            <label>
+                <input
+                    id="gridToggle"
+                    type="checkbox"
+                    checked>
+                Cuadrícula
+            </label>
+
+            <label>
+                <input
+                    id="soundToggle"
+                    type="checkbox"
+                    checked>
+                Sonido
+            </label>
+
+        </div>
+
+        <button
+            id="applySettings"
+            class="primary-button full">
+            APLICAR Y REINICIAR
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     GAME OVER / INICIALES
+===================================================== -->
+
+<div
+    id="initialsModal"
+    class="modal hidden">
+
+    <div class="modal-box">
+
+        <div class="modal-header">
+
+            <div>
+                <span>
+                    FIN DE LA PARTIDA
+                </span>
+
+                <h2>
+                    NUEVO REGISTRO
+                </h2>
+            </div>
+
+        </div>
+
+        <div class="initials-box">
+
+            <h3>
+                ¡BUENA PARTIDA!
+            </h3>
+
+            <p>
+                Introduce tus iniciales para guardar el resultado.
+            </p>
+
+            <div class="gameover-score">
+                PUNTOS: <span id="finalScore">0</span>
+            </div>
+
+            <br>
+
+            <input
+                id="initialsInput"
+                class="initial-input"
+                maxlength="3"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="AAA">
+
+            <br><br>
+
+            <button
+                id="saveInitials"
+                class="primary-button full">
+                GUARDAR RESULTADO
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script src="app.js"></script>
+
+</body>
+</html>
