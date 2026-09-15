@@ -11,6 +11,12 @@
   const INFINITE_SEEN_RULES_KEY =
     'buscaminas-infinite-seen-rules';
 
+  const INFINITE_PROGRESS_KEY =
+    'buscaminas-infinite-progress';
+
+  const INFINITE_RECORD_KEY =
+    'buscaminas-infinite-record';
+
   const INFINITE_RULES = [
     { level: 5,  name: 'Patrones bloqueados' },
     { level: 10, name: 'Números inciertos' },
@@ -67,6 +73,9 @@
 
   const infiniteLevelEl =
     document.getElementById('infinite-level');
+
+  const infiniteRecordEl =
+    document.getElementById('infinite-record');
 
   const infiniteRulesEl =
     document.getElementById('infinite-rules');
@@ -130,6 +139,26 @@
   } catch (error) {
     seenInfiniteRules = [];
   }
+
+  let infiniteSavedLevel =
+    Math.max(
+      1,
+      parseInt(
+        localStorage.getItem(
+          INFINITE_PROGRESS_KEY
+        )
+      ) || 1
+    );
+
+  let infiniteRecord =
+    Math.max(
+      1,
+      parseInt(
+        localStorage.getItem(
+          INFINITE_RECORD_KEY
+        )
+      ) || 1
+    );
 
   let infiniteLevel = 1;
   let infiniteAdvanceHandle = null;
@@ -244,17 +273,13 @@
       '--text': '#ece4d4',
       '--text-dim': '#a9998692',
       '--text-dim-solid': '#a89a84',
-
       '--brass': '#c9a24b',
       '--brass-bright': '#e6c473',
-
       '--danger': '#c0584a',
       '--flag': '#5a9484',
-
       '--cell-a': '#3c3427',
       '--cell-b': '#332c21',
       '--cell-revealed': '#211d18',
-
       '--n1': '#7fb0d8',
       '--n2': '#85b47f',
       '--n3': '#cf7e6d',
@@ -560,6 +585,60 @@
             '</div>'
         )
         .join('');
+  }
+
+  function saveInfiniteProgress() {
+    if (
+      !infiniteUnlocked ||
+      currentPreset !== 'infinite'
+    ) {
+      return;
+    }
+
+    infiniteSavedLevel =
+      Math.max(
+        1,
+        infiniteLevel
+      );
+
+    localStorage.setItem(
+      INFINITE_PROGRESS_KEY,
+      String(infiniteSavedLevel)
+    );
+  }
+
+  function updateInfiniteRecord() {
+    if (
+      infiniteLevel >
+      infiniteRecord
+    ) {
+      infiniteRecord =
+        infiniteLevel;
+
+      localStorage.setItem(
+        INFINITE_RECORD_KEY,
+        String(infiniteRecord)
+      );
+    }
+
+    if (infiniteRecordEl) {
+      infiniteRecordEl.textContent =
+        String(
+          infiniteRecord
+        ).padStart(
+          2,
+          '0'
+        );
+    }
+  }
+
+  function resetInfiniteProgress() {
+    infiniteSavedLevel = 1;
+
+    localStorage.setItem(
+      INFINITE_PROGRESS_KEY,
+      '1'
+    );
   }
 
   function getFlagLimit() {
@@ -1072,10 +1151,6 @@
       }
     );
 
-    /*
-      El primer clic SIEMPRE es seguro.
-      También se mantienen seguras sus vecinas.
-    */
     const excluded =
       new Set();
 
@@ -1902,18 +1977,46 @@
       currentPreset ===
       'infinite'
     ) {
+      updateInfiniteRecord();
+
+      resetInfiniteProgress();
+
       setStatus(
         'Nivel ' +
           infiniteLevel +
-          ' perdido. El infinito no perdona.',
+          ' perdido. Récord: ' +
+          infiniteRecord +
+          '. Reiniciando...',
         'lose'
       );
-    } else {
-      setStatus(
-        'Detonaste una carga. Inténtalo de nuevo.',
+
+      setLampMood(
         'lose'
       );
+
+      clearTimeout(
+        infiniteAdvanceHandle
+      );
+
+      infiniteAdvanceHandle =
+        setTimeout(
+          () => {
+            infiniteLevel = 1;
+
+            startInfiniteLevel(
+              1
+            );
+          },
+          1200
+        );
+
+      return;
     }
+
+    setStatus(
+      'Detonaste una carga. Inténtalo de nuevo.',
+      'lose'
+    );
 
     setLampMood(
       'lose'
@@ -2285,6 +2388,9 @@
         level
       );
 
+    updateInfiniteRecord();
+    saveInfiniteProgress();
+
     const cfg =
       calculateInfiniteConfig(
         infiniteLevel
@@ -2301,6 +2407,16 @@
         2,
         '0'
       );
+
+    if (infiniteRecordEl) {
+      infiniteRecordEl.textContent =
+        String(
+          infiniteRecord
+        ).padStart(
+          2,
+          '0'
+        );
+    }
 
     applyInfinitePalette(
       infiniteLevel
@@ -2331,12 +2447,6 @@
       );
     }
   }
-
-  /*
-    ================================================================
-    CÓDIGO KONAMI EN PC
-    ================================================================
-  */
 
   function processDesktopKonami(
     key
@@ -2380,12 +2490,6 @@
       konamiIndex = 1;
     }
   }
-
-  /*
-    ================================================================
-    CÓDIGO KONAMI EN CELULAR
-    ================================================================
-  */
 
   function resetMobileKonami() {
     mobileKonamiIndex = 0;
@@ -2503,12 +2607,6 @@
       false;
   }
 
-  /*
-    ================================================================
-    5 PULSACIONES RÁPIDAS
-    ================================================================
-  */
-
   function registerSecretReset(
     isTouch
   ) {
@@ -2552,11 +2650,6 @@
       }
     }
   }
-
-  /*
-    Detectamos el tipo de interacción
-    antes del click del botón.
-  */
 
   resetBtn.addEventListener(
     'pointerdown',
@@ -2608,12 +2701,6 @@
     }
   );
 
-  /*
-    ================================================================
-    BOTONES DE LA VENTANA SECRETA
-    ================================================================
-  */
-
   if (
     secretModal
   ) {
@@ -2635,12 +2722,6 @@
         }
       );
   }
-
-  /*
-    ================================================================
-    DIFICULTADES
-    ================================================================
-  */
 
   segEl
     .querySelectorAll(
@@ -2689,7 +2770,7 @@
                 );
 
               startInfiniteLevel(
-                1
+                infiniteSavedLevel
               );
 
               updateInfiniteVisibility();
@@ -2749,12 +2830,6 @@
     }
   );
 
-  /*
-    ================================================================
-    MODO REVELAR / MARCAR
-    ================================================================
-  */
-
   modeToggle
     .querySelectorAll(
       'button'
@@ -2787,12 +2862,6 @@
       }
     );
 
-  /*
-    ================================================================
-    KONAMI DESDE TECLADO
-    ================================================================
-  */
-
   window.addEventListener(
     'keydown',
     event => {
@@ -2812,12 +2881,6 @@
     }
   );
 
-  /*
-    ================================================================
-    RESIZE
-    ================================================================
-  */
-
   window.addEventListener(
     'resize',
     () => {
@@ -2830,17 +2893,50 @@
     }
   );
 
-  /*
-    ================================================================
-    INICIALIZACIÓN
-    ================================================================
-  */
+  window.addEventListener(
+    'beforeunload',
+    () => {
+      saveInfiniteProgress();
+    }
+  );
 
   updateMinesHintAndClamp();
 
   applyBasePalette();
 
   updateInfiniteVisibility();
+
+  if (infiniteUnlocked) {
+    infiniteSavedLevel =
+      Math.max(
+        1,
+        parseInt(
+          localStorage.getItem(
+            INFINITE_PROGRESS_KEY
+          )
+        ) || 1
+      );
+
+    infiniteRecord =
+      Math.max(
+        1,
+        parseInt(
+          localStorage.getItem(
+            INFINITE_RECORD_KEY
+          )
+        ) || 1
+      );
+
+    if (infiniteRecordEl) {
+      infiniteRecordEl.textContent =
+        String(
+          infiniteRecord
+        ).padStart(
+          2,
+          '0'
+        );
+    }
+  }
 
   applyConfig(
     PRESETS.beginner
