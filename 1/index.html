@@ -1,18 +1,377 @@
 <!doctype html>
 <html lang="es">
+
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Snake | Mini Arcade</title><link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>Snake | Mini Arcade</title>
+
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<main><header><div><p class="eyebrow">Mini arcade / 01</p><h1>Snake</h1></div><div class="scores"><div><span>Puntos</span><strong id="puntos">0</strong></div><div><span>Récord</span><strong id="record">0</strong></div></div></header>
-<section class="game-shell"><div id="juego"><canvas id="tablero" aria-label="Tablero del juego Snake"></canvas><div id="estado" class="status"><div><strong>Snake</strong><span>Pulsa una flecha para comenzar</span></div></div></div><div class="toolbar"><span class="hint">Flechas / WASD para moverte · Espacio para pausar</span><button id="reiniciar" type="button">Reiniciar</button></div><div class="controls"><button data-direccion="arriba" aria-label="Arriba">â–²</button><button data-direccion="izquierda" aria-label="Izquierda">â—€</button><button data-direccion="abajo" aria-label="Abajo">â–¼</button><button data-direccion="derecha" aria-label="Derecha">â–¶</button></div></section>
-<section class="personalizacion"><div class="custom-heading"><div><p class="eyebrow">Tu partida / 02</p><h2>Personaliza el tablero</h2></div><button id="restaurar-colores" class="text-button" type="button">Restaurar</button></div><div class="color-grid">
-<div class="color-control" data-color-control="fondo"><label for="color-fondo">Fondo del grid</label><div class="color-inputs"><input id="color-fondo" class="color-picker" type="color" value="#121a2a"><input class="hex-input" type="text" value="#121A2A" maxlength="7"></div><div class="presets"><button type="button" data-preset="#121a2a" style="--swatch:#121a2a"></button><button type="button" data-preset="#f5f0e8" style="--swatch:#f5f0e8"></button><button type="button" data-preset="#152b2a" style="--swatch:#152b2a"></button></div></div>
-<div class="color-control" data-color-control="grid"><label for="color-grid">Líneas del grid</label><div class="color-inputs"><input id="color-grid" class="color-picker" type="color" value="#1d2940"><input class="hex-input" type="text" value="#1D2940" maxlength="7"></div><div class="presets"><button type="button" data-preset="#1d2940" style="--swatch:#1d2940"></button><button type="button" data-preset="#d8cfc0" style="--swatch:#d8cfc0"></button><button type="button" data-preset="#28504a" style="--swatch:#28504a"></button></div></div>
-<div class="color-control" data-color-control="serpiente"><label for="color-serpiente">Serpiente</label><div class="color-inputs"><input id="color-serpiente" class="color-picker" type="color" value="#b8e34a"><input class="hex-input" type="text" value="#B8E34A" maxlength="7"></div><div class="presets"><button type="button" data-preset="#b8e34a" style="--swatch:#b8e34a"></button><button type="button" data-preset="#49d4c0" style="--swatch:#49d4c0"></button><button type="button" data-preset="#ff6b8a" style="--swatch:#ff6b8a"></button></div></div>
-<div class="color-control" data-color-control="manzana"><label for="color-manzana">Manzana</label><div class="color-inputs"><input id="color-manzana" class="color-picker" type="color" value="#ff9d5c"><input class="hex-input" type="text" value="#FF9D5C" maxlength="7"></div><div class="presets"><button type="button" data-preset="#ff9d5c" style="--swatch:#ff9d5c"></button><button type="button" data-preset="#ef476f" style="--swatch:#ef476f"></button><button type="button" data-preset="#ffdc5e" style="--swatch:#ffdc5e"></button></div></div>
-</div></section></main>
-<script>
-const canvas=document.getElementById('tablero'),ctx=canvas.getContext('2d'),estado=document.getElementById('estado'),puntosTexto=document.getElementById('puntos'),recordTexto=document.getElementById('record'),tamano=20;let serpiente,comida,direccion,siguienteDireccion,puntos,intervalo,avanzando,pausado,partidaTerminada;let record=Number(localStorage.getItem('snake-record')||0);const iniciales={fondo:'#121a2a',grid:'#1d2940',serpiente:'#b8e34a',manzana:'#ff9d5c'},colores=JSON.parse(localStorage.getItem('snake-colores')||'null')||{...iniciales};recordTexto.textContent=record;
-function ajustarCanvas(){const lado=Math.min(canvas.clientWidth,canvas.clientHeight),escala=devicePixelRatio||1;canvas.width=lado*escala;canvas.height=lado*escala;ctx.setTransform(escala*lado/(tamano*tamano),0,0,escala*lado/(tamano*tamano),0,0);dibujar()}function nuevaComida(){do{comida={x:Math.floor(Math.random()*tamano),y:Math.floor(Math.random()*tamano)}}while(serpiente.some(p=>p.x===comida.x&&p.y===comida.y))}function iniciar(){serpiente=[{x:10,y:10},{x:9,y:10},{x:8,y:10}];direccion={x:1,y:0};siguienteDireccion=direccion;puntos=0;avanzando=false;pausado=false;partidaTerminada=false;puntosTexto.textContent=0;nuevaComida();estado.hidden=false;estado.innerHTML='<div><strong>Snake</strong><span>Pulsa una flecha para comenzar</span></div>';clearInterval(intervalo);dibujar()}function comenzar(){if(!avanzando){avanzando=true;estado.hidden=true;intervalo=setInterval(actualizar,125)}}function cambiarDireccion(nombre){const ds={arriba:{x:0,y:-1},abajo:{x:0,y:1},izquierda:{x:-1,y:0},derecha:{x:1,y:0}},nueva=ds[nombre];if(!nueva)return;if(partidaTerminada)iniciar();if(nueva.x===-direccion.x&&nueva.y===-direccion.y)return;siguienteDireccion=nueva;comenzar()}function actualizar(){if(pausado)return;direccion=siguienteDireccion;const cabeza={x:serpiente[0].x+direccion.x,y:serpiente[0].y+direccion.y},choca=cabeza.x<0||cabeza.x>=tamano||cabeza.y<0||cabeza.y>=tamano||serpiente.some(p=>p.x===cabeza.x&&p.y===cabeza.y);if(choca)return terminar();serpiente.unshift(cabeza);if(cabeza.x===comida.x&&cabeza.y===comida.y){puntos++;puntosTexto.textContent=puntos;if(puntos>record){record=puntos;recordTexto.textContent=record;localStorage.setItem('snake-record',record)}nuevaComida()}else serpiente.pop();dibujar()}function terminar(){clearInterval(intervalo);avanzando=false;partidaTerminada=true;estado.hidden=false;estado.innerHTML='<div><strong>Fin de la partida</strong><span>Has conseguido '+puntos+' puntos · pulsa una flecha para volver a jugar</span></div>'}function dibujar(){if(!canvas.width||!comida||!serpiente)return;ctx.clearRect(0,0,tamano*tamano,tamano*tamano);ctx.fillStyle=colores.manzana;ctx.beginPath();ctx.arc(comida.x*tamano+10,comida.y*tamano+10,6,0,Math.PI*2);ctx.fill();serpiente.forEach((p,i)=>{ctx.fillStyle=i===0?aclarar(colores.serpiente):colores.serpiente;ctx.fillRect(p.x*tamano+2,p.y*tamano+2,16,16)})}function aclarar(hex){const rgb=hex.slice(1).match(/.{2}/g).map(v=>parseInt(v,16));return'rgb('+rgb.map(v=>Math.min(255,v+35)).join(',')+')'}function actualizarColor(control,color){colores[control.dataset.colorControl]=color;document.documentElement.style.setProperty('--board-bg',colores.fondo);document.documentElement.style.setProperty('--grid-color',colores.grid);localStorage.setItem('snake-colores',JSON.stringify(colores));dibujar()}function configurarColor(control){const picker=control.querySelector('.color-picker'),hex=control.querySelector('.hex-input'),aplicar=color=>{picker.value=color;hex.value=color.toUpperCase();actualizarColor(control,color)};picker.addEventListener('input',()=>aplicar(picker.value));hex.addEventListener('change',()=>/^#[0-9a-f]{6}$/i.test(hex.value.trim())?aplicar(hex.value.toLowerCase()):hex.value=picker.value.toUpperCase());control.querySelectorAll('[data-preset]').forEach(b=>b.addEventListener('click',()=>aplicar(b.dataset.preset)));aplicar(colores[control.dataset.colorControl])}document.querySelectorAll('[data-color-control]').forEach(configurarColor);document.getElementById('restaurar-colores').addEventListener('click',()=>{localStorage.setItem('snake-colores',JSON.stringify(iniciales));location.reload()});document.addEventListener('keydown',e=>{const t={ArrowUp:'arriba',w:'arriba',ArrowDown:'abajo',s:'abajo',ArrowLeft:'izquierda',a:'izquierda',ArrowRight:'derecha',d:'derecha'};if(t[e.key]){e.preventDefault();cambiarDireccion(t[e.key])}if(e.code==='Space'&&avanzando){pausado=!pausado;estado.hidden=!pausado;estado.innerHTML='<div><strong>Pausa</strong><span>Pulsa espacio para continuar</span></div>'}});document.querySelectorAll('[data-direccion]').forEach(b=>b.addEventListener('click',()=>cambiarDireccion(b.dataset.direccion)));document.getElementById('reiniciar').addEventListener('click',iniciar);addEventListener('resize',ajustarCanvas);iniciar();ajustarCanvas();
-</script></body></html>
+
+    <main>
+
+        <header>
+
+            <div>
+                <p class="eyebrow">
+                    Mini arcade / 01
+                </p>
+
+                <h1>
+                    Snake
+                </h1>
+            </div>
+
+            <div class="scores">
+
+                <div>
+                    <span>
+                        Puntos
+                    </span>
+
+                    <strong id="puntos">
+                        0
+                    </strong>
+                </div>
+
+                <div>
+                    <span>
+                        Récord
+                    </span>
+
+                    <strong id="record">
+                        0
+                    </strong>
+                </div>
+
+            </div>
+
+        </header>
+
+        <section class="game-shell">
+
+            <div id="juego">
+
+                <canvas
+                    id="tablero"
+                    aria-label="Tablero del juego Snake"
+                ></canvas>
+
+                <div
+                    id="estado"
+                    class="status"
+                >
+
+                    <div>
+                        <strong>
+                            Snake
+                        </strong>
+
+                        <span>
+                            Pulsa una flecha para comenzar
+                        </span>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="toolbar">
+
+                <span class="hint">
+                    Flechas / WASD para moverte · Espacio para pausar
+                </span>
+
+                <button
+                    id="reiniciar"
+                    type="button"
+                >
+                    Reiniciar
+                </button>
+
+            </div>
+
+            <div class="controls">
+
+                <button
+                    data-direccion="arriba"
+                    aria-label="Arriba"
+                >
+                    â–²
+                </button>
+
+                <button
+                    data-direccion="izquierda"
+                    aria-label="Izquierda"
+                >
+                    â—€
+                </button>
+
+                <button
+                    data-direccion="abajo"
+                    aria-label="Abajo"
+                >
+                    â–¼
+                </button>
+
+                <button
+                    data-direccion="derecha"
+                    aria-label="Derecha"
+                >
+                    â–¶
+                </button>
+
+            </div>
+
+        </section>
+
+        <section class="personalizacion">
+
+            <div class="custom-heading">
+
+                <div>
+
+                    <p class="eyebrow">
+                        Tu partida / 02
+                    </p>
+
+                    <h2>
+                        Personaliza el tablero
+                    </h2>
+
+                </div>
+
+                <button
+                    id="restaurar-colores"
+                    class="text-button"
+                    type="button"
+                >
+                    Restaurar
+                </button>
+
+            </div>
+
+            <div class="color-grid">
+
+                <div
+                    class="color-control"
+                    data-color-control="fondo"
+                >
+
+                    <label for="color-fondo">
+                        Fondo del grid
+                    </label>
+
+                    <div class="color-inputs">
+
+                        <input
+                            id="color-fondo"
+                            class="color-picker"
+                            type="color"
+                            value="#121a2a"
+                        >
+
+                        <input
+                            class="hex-input"
+                            type="text"
+                            value="#121A2A"
+                            maxlength="7"
+                        >
+
+                    </div>
+
+                    <div class="presets">
+
+                        <button
+                            type="button"
+                            data-preset="#121a2a"
+                            style="--swatch:#121a2a"
+                        ></button>
+
+                        <button
+                            type="button"
+                            data-preset="#f5f0e8"
+                            style="--swatch:#f5f0e8"
+                        ></button>
+
+                        <button
+                            type="button"
+                            data-preset="#152b2a"
+                            style="--swatch:#152b2a"
+                        ></button>
+
+                    </div>
+
+                </div>
+
+                <div
+                    class="color-control"
+                    data-color-control="grid"
+                >
+
+                    <label for="color-grid">
+                        Líneas del grid
+                    </label>
+
+                    <div class="color-inputs">
+
+                        <input
+                            id="color-grid"
+                            class="color-picker"
+                            type="color"
+                            value="#1d2940"
+                        >
+
+                        <input
+                            class="hex-input"
+                            type="text"
+                            value="#1D2940"
+                            maxlength="7"
+                        >
+
+                    </div>
+
+                    <div class="presets">
+
+                        <button
+                            type="button"
+                            data-preset="#1d2940"
+                            style="--swatch:#1d2940"
+                        ></button>
+
+                        <button
+                            type="button"
+                            data-preset="#d8cfc0"
+                            style="--swatch:#d8cfc0"
+                        ></button>
+
+                        <button
+                            type="button"
+                            data-preset="#28504a"
+                            style="--swatch:#28504a"
+                        ></button>
+
+                    </div>
+
+                </div>
+
+                <div
+                    class="color-control"
+                    data-color-control="serpiente"
+                >
+
+                    <label for="color-serpiente">
+                        Serpiente
+                    </label>
+
+                    <div class="color-inputs">
+
+                        <input
+                            id="color-serpiente"
+                            class="color-picker"
+                            type="color"
+                            value="#b8e34a"
+                        >
+
+                        <input
+                            class="hex-input"
+                            type="text"
+                            value="#B8E34A"
+                            maxlength="7"
+                        >
+
+                    </div>
+
+                    <div class="presets">
+
+                        <button
+                            type="button"
+                            data-preset="#b8e34a"
+                            style="--swatch:#b8e34a"
+                        ></button>
+
+                        <button
+                            type="button"
+                            data-preset="#49d4c0"
+                            style="--swatch:#49d4c0"
+                        ></button>
+
+                        <button
+                            type="button"
+                            data-preset="#ff6b8a"
+                            style="--swatch:#ff6b8a"
+                        ></button>
+
+                    </div>
+
+                </div>
+
+                <div
+                    class="color-control"
+                    data-color-control="manzana"
+                >
+
+                    <label for="color-manzana">
+                        Manzana
+                    </label>
+
+                    <div class="color-inputs">
+
+                        <input
+                            id="color-manzana"
+                            class="color-picker"
+                            type="color"
+                            value="#ff9d5c"
+                        >
+
+                        <input
+                            class="hex-input"
+                            type="text"
+                            value="#FF9D5C"
+                            maxlength="7"
+                        >
+
+                    </div>
+
+                    <div class="presets">
+
+                        <button
+                            type="button"
+                            data-preset="#ff9d5c"
+                            style="--swatch:#ff9d5c"
+                        ></button>
+
+                        <button
+                            type="button"
+                            data-preset="#ef476f"
+                            style="--swatch:#ef476f"
+                        ></button>
+
+                        <button
+                            type="button"
+                            data-preset="#ffdc5e"
+                            style="--swatch:#ffdc5e"
+                        ></button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>
